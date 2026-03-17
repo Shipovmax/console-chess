@@ -1,73 +1,73 @@
-# Отчет о реализации дополнительных заданий
+# Report on the Additional Tasks Implementation
 
-**Общая набранная сложность:** 5 баллов.
-
----
-
-### Задание 1: Новые виды фигур (Сложность: 1)
-**Описание:** Придумать 3 новых вида фигур с оригинальными правилами перемещения и реализовать их классы, а также создать модификацию шахмат с новыми фигурами с минимальным вмешательством.
-
-**Реализация в коде:**
-В игру добавлен режим `"fairy"`, который заменяет стандартные фигуры на новые:
-* **Чемпион (★):** ходит на 1 или 2 клетки по прямой (может перепрыгивать).
-* **Колдун (✧):** ходит на 1 или 3 клетки по диагонали (может перепрыгивать).
-* **Прыгун (⚶):** ходит ровно на 2 клетки в любом направлении.
-
-**Где посмотреть в коде:**
-* **Строки 51-66:** В методе `symbol` класса `Piece` добавлены новые юникод-символы для фигур `champion`, `wizard` и `jumper`.
-* **Строки 93-102:** В методе `create_board` реализована логика расстановки фигур для сказочного режима (замена ферзя, слонов и коней).
-* **Строки 135-147:** В методе `get_valid_moves_for_piece` прописаны векторы перемещений для новых типов фигур.
+**Total earned complexity:** 5 points.
 
 ---
 
-### Задание 5: «Откат» ходов (Сложность: 1)
-**Описание:** Реализовать возможность возвращаться на ход назад вплоть до начала партии.
+### Task 1: New Piece Types (Complexity: 1)
+**Description:** Design 3 new piece types with original movement rules, implement their classes, and create a modified chess mode with minimal disruption to the existing codebase.
 
-**Реализация в коде:**
-В движке реализован стек истории `move_log`. При каждом ходе в него сохраняется снимок текущего состояния игры (доска, чей ход, счетчик ходов, флаг окончания игры и клетка для взятия на проходе). При вызове команды отката состояние восстанавливается из последнего снимка.
+**Implementation:**
+The game now includes a `"fairy"` mode that replaces standard pieces with new ones:
+- **Champion (★):** moves 1 or 2 squares orthogonally and can jump.
+- **Wizard (✧):** moves 1 or 3 squares diagonally and can jump.
+- **Jumper (⚶):** moves exactly 2 squares in any direction.
 
-**Где посмотреть в коде:**
-* **Строки 282-289:** В методе `make_move` создается словарь `state_snapshot` с глубокой копией доски (`copy.deepcopy(self.board)`) и параметров, который сохраняется в `self.move_log`.
-* **Строки 314-325:** Метод `undo_move` извлекает последний сохраненный стейт из `self.move_log` и восстанавливает атрибуты класса `ChessEngine`.
-* **Строки 453-456:** В UI методе `play_match` обработка пользовательской команды `undo` и сброс выбранной клетки.
-
----
-
-### Задание 6: Подсказка доступных ходов (Сложность: 1)
-**Описание:** Реализовать функцию визуальной подсказки доступных полей для хода после выбора фигуры.
-
-**Реализация в коде:**
-Добавлен механизм интерактивного выбора фигуры (например, вводом координаты `e2`). Выбранная клетка подсвечивается пурпурным цветом, а все легальные ходы для стоящей на ней фигуры высчитываются движком и подсвечиваются зеленым фоном на выводимой в консоль доске.
-
-**Где посмотреть в коде:**
-* **Строки 397-400:** В методе `print_board_styled` формируется множество `legal_destinations`, куда записываются все возможные легальные конечные клетки для выбранной фигуры `self.selected_square`.
-* **Строки 417-431:** Логика раскраски: переменная `bg` принимает значение `BG_MAGENTA` для самой фигуры и `BG_GREEN` для клеток из множества `legal_destinations`.
-* **Строки 463-472:** В `play_match` обработка ввода из 2-х символов (выбор фигуры) и сохранение её в `self.selected_square`.
+**Where to look in the code:**
+- In `Piece.symbol`, Unicode symbols were added for `champion`, `wizard`, and `jumper`.
+- In `ChessEngine.create_board`, the fairy-mode piece placement logic replaces the queen, bishops, and knights.
+- In `ChessEngine.get_valid_moves_for_piece`, movement vectors were added for the new piece types.
 
 ---
 
-### Задание 7: Подсказка угрожаемых фигур (Сложность: 1)
-**Описание:** Функция возвращает информацию о том, какие фигуры ходящего игрока находятся под боем, и визуально выделяет их на поле.
+### Task 5: Move Undo (Complexity: 1)
+**Description:** Add the ability to roll back moves all the way to the beginning of the game.
 
-**Реализация в коде:**
-Добавлена команда-переключатель `threats`. Если она активна, движок собирает все возможные ходы противника на текущей доске. Если конечная клетка хода противника совпадает с позицией вашей фигуры (включая короля), эта клетка окрашивается в красный цвет.
+**Implementation:**
+The engine uses a `move_log` history stack. Before each move, it stores a snapshot of the current game state, including the board, active player, move counter, game-over flag, and en passant target square. The `undo` command restores the most recent snapshot.
 
-**Где посмотреть в коде:**
-* **Строки 402-406:** В методе `print_board_styled` собирается множество `threatened_squares` путем вызова `get_all_possible_moves` для цвета оппонента.
-* **Строки 419-423:** Проверка `is_threatened` — если клетка находится под ударом и на ней стоит ваша фигура, флаг становится `True`, и фон меняется на `BG_RED`.
-* **Строки 458-460:** В `play_match` обработка команды `threats`, которая инвертирует булевый флаг `self.show_threats`.
+**Where to look in the code:**
+- In `ChessEngine.make_move`, `state_snapshot` stores a deep copy of the board (`copy.deepcopy(self.board)`) and the related state fields before the move.
+- In `ChessEngine.undo_move`, the last saved state is restored back into the `ChessEngine` instance.
+- In `AdvancedChessEmulator.play_match`, the `undo` command is handled and clears the currently selected square.
 
 ---
 
-### Задание 8: Сложные правила пешки (Сложность: 1)
-**Описание:** Поддержка для пешки сложных правил: «взятие на проходе» и замены на другую фигуру при достижении крайней горизонтали.
+### Task 6: Legal Move Hinting (Complexity: 1)
+**Description:** Add a visual hinting feature that shows legal destination squares after selecting a piece.
 
-**Реализация в коде:**
-Движок отслеживает прыжки пешек на 2 клетки и сохраняет «битое поле» в `en_passant_target`. Если чужая пешка атакует это поле, происходит взятие с удалением проскочившей пешки. При достижении 0-й или 7-й горизонтали реализован запрос в консоли для выбора новой фигуры.
+**Implementation:**
+The UI supports interactive piece selection, for example by entering `e2`. The selected square is highlighted in magenta, and all legal moves for that piece are computed by the engine and highlighted in green on the console-rendered board.
 
-**Где посмотреть в коде:**
-* **Строки 164-168:** В генераторе ходов `get_valid_moves_for_piece` добавлено условие: если целевая клетка совпадает с `self.en_passant_target`, ход разрешается.
-* **Строки 222-224:** В методе `get_legal_moves` реализовано корректное удаление пешки на временной доске `temp_board` при симуляции взятия на проходе, чтобы правильно проверить, не открывается ли шах своему королю.
-* **Строки 291-298:** Выполнение самого взятия на проходе в `make_move` (удаление фигуры) и установка нового `en_passant_target`, если пешка сходила на 2 клетки.
-* **Строки 304-307:** Превращение пешки на уровне логики (смена `self.board[r2][c2].type = promote_to`).
-* **Строки 485-492:** В UI методе `play_match` добавлен перехват хода пешки на последнюю горизонталь с запросом к пользователю (`input`), в кого он хочет её превратить.
+**Where to look in the code:**
+- In `AdvancedChessEmulator.print_board_styled`, the `legal_destinations` set is built from the legal moves of `self.selected_square`.
+- In the same method, the background-color logic uses `BG_MAGENTA` for the selected square and `BG_GREEN` for legal destination squares.
+- In `AdvancedChessEmulator.play_match`, two-character input is interpreted as piece selection and stored in `self.selected_square`.
+
+---
+
+### Task 7: Threatened Piece Hinting (Complexity: 1)
+**Description:** Show which pieces belonging to the active player are currently under attack and highlight them on the board.
+
+**Implementation:**
+The `threats` toggle command was added. When enabled, the engine gathers all possible moves for the opposing side on the current board. If an opponent destination square matches one of the current player's occupied squares, including the king, that square is highlighted in red.
+
+**Where to look in the code:**
+- In `AdvancedChessEmulator.print_board_styled`, the `threatened_squares` set is built from `get_all_possible_moves` for the opponent color.
+- In the same method, the `is_threatened` check turns on `BG_RED` for threatened friendly pieces.
+- In `AdvancedChessEmulator.play_match`, the `threats` command toggles the `self.show_threats` boolean flag.
+
+---
+
+### Task 8: Advanced Pawn Rules (Complexity: 1)
+**Description:** Support advanced pawn rules: en passant and promotion to another piece upon reaching the last rank.
+
+**Implementation:**
+The engine tracks two-square pawn advances and stores the intermediate capture square in `en_passant_target`. If an opposing pawn attacks that square, en passant capture is performed and the skipped pawn is removed. When a pawn reaches rank 1 or rank 8, the console prompts the user to choose the promotion piece.
+
+**Where to look in the code:**
+- In `ChessEngine.get_valid_moves_for_piece`, a move is allowed when its target square matches `self.en_passant_target`.
+- In `ChessEngine.get_legal_moves`, the captured pawn is correctly removed from `temp_board` during en passant simulation so self-check detection remains accurate.
+- In `ChessEngine.make_move`, en passant execution removes the captured pawn and updates `en_passant_target` after a two-square pawn move.
+- In the same method, promotion changes `self.board[r2][c2].type = promote_to`.
+- In `AdvancedChessEmulator.play_match`, pawn moves to the last rank trigger a promotion prompt through `input`.

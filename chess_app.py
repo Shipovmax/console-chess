@@ -2,64 +2,63 @@ import copy
 
 
 class Piece:
-    """Класс, который представляет одну шахматную фигуру"""
+    """Represents a single chess piece."""
 
     def __init__(self, color, type_):
-        self.color = color  # 'white' (белая) или 'black' (черная)
-        self.type = type_   # 'pawn' (пешка), 'rook' (ладья), 'knight' (конь),
-                            # 'bishop' (слон), 'queen' (королева), 'king' (король)
+        self.color = color  # 'white' or 'black'
+        self.type = type_  # 'pawn', 'rook', 'knight', 'bishop', 'queen', or 'king'
 
     def __repr__(self):
         return f"{self.color}_{self.type}"
 
     def symbol(self):
-        """Возвращает Unicode символ фигуры для красивого вывода в консоль"""
-        symbols = {   
+        """Return the Unicode symbol used to render the piece in the console."""
+        symbols = {
             "white": {
-                "king": "♔",   # Белый король
-                "queen": "♕",  # Белая королева
-                "rook": "♖",   # Белая ладья
-                "bishop": "♗", # Белый слон
-                "knight": "♘", # Белый конь
-                "pawn": "♙",   # Белая пешка
+                "king": "♔",   # White king
+                "queen": "♕",  # White queen
+                "rook": "♖",   # White rook
+                "bishop": "♗",  # White bishop
+                "knight": "♘",  # White knight
+                "pawn": "♙",   # White pawn
             },
             "black": {
-                "king": "♚",   # Черный король
-                "queen": "♛",  # Черная королева
-                "rook": "♜",   # Черная ладья
-                "bishop": "♝", # Черный слон
-                "knight": "♞", # Черный конь
-                "pawn": "♟",   # Черная пешка
-            },    
+                "king": "♚",   # Black king
+                "queen": "♛",  # Black queen
+                "rook": "♜",   # Black rook
+                "bishop": "♝",  # Black bishop
+                "knight": "♞",  # Black knight
+                "pawn": "♟",   # Black pawn
+            },
         }
         return symbols[self.color][self.type]
 
 
 class ChessEngine:
-    """Главный класс игрового движка шахмат"""
+    """Main chess game engine class."""
 
     def __init__(self):
-        self.board = self.create_board()    # Создаем доску 8х8
-        self.turn = "white"                 # Белые ходят первыми
-        self.move_log = []                  # Список всех ходов (для отката)
-        self.game_over = False              # Флаг, что игра закончилась
-        self.winner = None                  # Кто выиграл (белые или черные)
-        self.move_count = 0                 # Количество сделанных ходов
+        self.board = self.create_board()  # Create an 8x8 board
+        self.turn = "white"  # White moves first
+        self.move_log = []  # Move history for undo support
+        self.game_over = False  # Indicates whether the game has ended
+        self.winner = None  # Winner color, if any
+        self.move_count = 0  # Number of completed moves
 
     def create_board(self):
-        """Создает начальную расстановку фигур на доске"""
-        # Создаем пустую 8x8 доску (8 строк, 8 столбцов)
+        """Create the initial piece setup."""
+        # Create an empty 8x8 board
         board = [[None for _ in range(8)] for _ in range(8)]
 
-        # Расставляем черные пешки на 2-ю строку (индекс 1)
+        # Place black pawns on rank 7 (index 1)
         for c in range(8):
             board[1][c] = Piece("black", "pawn")
 
-        # Расставляем белые пешки на 7-ю строку (индекс 6)
+        # Place white pawns on rank 2 (index 6)
         for c in range(8):
             board[6][c] = Piece("white", "pawn")
 
-        # Порядок расстановки фигур в ряду
+        # Back-rank piece order
         placement = [
             "rook",
             "knight",
@@ -71,40 +70,41 @@ class ChessEngine:
             "rook",
         ]
 
-        # Расставляем черные фигуры на 1-ю строку (индекс 0)
+        # Place black pieces on rank 8 (index 0)
         for c, type_ in enumerate(placement):
             board[0][c] = Piece("black", type_)
 
-        # Расставляем белые фигуры на 8-ю строку (индекс 7)
+        # Place white pieces on rank 1 (index 7)
         for c, type_ in enumerate(placement):
             board[7][c] = Piece("white", type_)
 
         return board
 
     def switch_turn(self):
-        """Переключает ход с одного игрока на другого"""
+        """Switch the active player."""
         self.turn = "black" if self.turn == "white" else "white"
 
     def get_all_possible_moves(self, color, board_state=None):
         """
-        Получает все возможные ходы для всех фигур заданного цвета.
-        Это ходы БЕЗ проверки на оставление короля под шахом.
+        Return all pseudo-legal moves for every piece of the given color.
+
+        These moves do not validate whether the king remains safe.
         """
-        # Используем текущую доску или переданное состояние
+        # Use the current board unless an alternate state is provided
         board = board_state if board_state else self.board
         moves = []
 
-        # Проходим по каждой клетке доски
+        # Scan every square on the board
         for r in range(8):
             for c in range(8):
                 piece = board[r][c]
 
-                # Если на клетке есть фигура нужного цвета
+                # Process pieces of the requested color only
                 if piece and piece.color == color:
-                    # Получаем все возможные ходы для этой фигуры
+                    # Generate all moves for the piece
                     valid_moves = self.get_valid_moves_for_piece(r, c, board)
 
-                    # Добавляем каждый ход в список вместе с начальной позицией
+                    # Store each move together with its source square
                     for move in valid_moves:
                         moves.append(((r, c), move))
 
@@ -112,120 +112,121 @@ class ChessEngine:
 
     def get_valid_moves_for_piece(self, r, c, board):
         """
-        Получает все возможные ходы для фигуры, стоящей на позиции (r, c).
-        Это ходы БЕЗ проверки на оставление короля под шахом.
+        Return all pseudo-legal moves for the piece on square (r, c).
+
+        These moves do not validate whether the king remains safe.
         """
         piece = board[r][c]
         moves = []
 
-        # Определяем направления движения для разных фигур
+        # Movement vectors for each piece type
         directions = {
             "rook": [
                 (-1, 0),
                 (1, 0),
                 (0, -1),
                 (0, 1),
-            ],  # Ладья: вверх, вниз, влево, вправо
+            ],  # Rook: up, down, left, right
             "bishop": [
                 (-1, -1),
                 (-1, 1),
                 (1, -1),
                 (1, 1)
-            ],  # Слон: 4 диагонали
+            ],  # Bishop: four diagonals
             "knight": [
                 (-2, -1),
                 (-2, 1),
                 (-1, -2),
-                (-1, 2),  
+                (-1, 2),
                 (1, -2),
                 (1, 2),
                 (2, -1),
                 (2, 1),
-            ],  # Конь: буква L
+            ],  # Knight: L-shaped jumps
             "king": [
                 (-1, -1),
                 (-1, 0),
-                (-1, 1),  
+                (-1, 1),
                 (0, -1),
                 (0, 1),
                 (1, -1),
                 (1, 0),
                 (1, 1),
-            ],  # Король: все соседние клетки
+            ],  # King: adjacent squares
         }
-        
-        # Королева = ладья + слон
+
+        # Queen = rook + bishop
         directions["queen"] = directions["rook"] + directions["bishop"]
 
-        # ==================== ПЕШКА ====================
+        # ==================== PAWN ====================
         if piece.type == "pawn":
-            # Белые пешки ходят вверх (r-1), черные вниз (r+1)
+            # White pawns move upward (r-1), black pawns downward (r+1)
             direction = -1 if piece.color == "white" else 1
 
-            # Ход пешки на одну клетку вперед
+            # Single forward move
             if 0 <= r + direction < 8 and board[r + direction][c] is None:
                 moves.append((r + direction, c))
 
-                # Первый ход пешки - может ходить на две клетки
+                # Double-step move from the starting rank
                 start_row = 6 if piece.color == "white" else 1
                 if r == start_row and board[r + direction * 2][c] is None:
                     moves.append((r + direction * 2, c))
 
-            # Взятие пешки по диагонали
-            for dc in [-1, 1]:  # Влево или вправо
+            # Diagonal captures
+            for dc in [-1, 1]:
                 if 0 <= r + direction < 8 and 0 <= c + dc < 8:
                     target = board[r + direction][c + dc]
-                    # Если там враг, можем его взять
+                    # Capture only enemy pieces
                     if target and target.color != piece.color:
                         moves.append((r + direction, c + dc))
 
-        # ==================== КОНЬ И КОРОЛЬ ====================
+        # ==================== KNIGHT AND KING ====================
         elif piece.type in ["knight", "king"]:
             for dr, dc in directions[piece.type]:
-                nr, nc = r + dr, c + dc  # Новая позиция
+                nr, nc = r + dr, c + dc  # New position
 
-                # Проверяем, что новая позиция на доске
+                # Stay within board boundaries
                 if 0 <= nr < 8 and 0 <= nc < 8:
                     target = board[nr][nc]
 
-                    # Можем ходить на пустую клетку или бить врага
+                    # The move is valid if the square is empty or occupied by an enemy
                     if target is None or target.color != piece.color:
                         moves.append((nr, nc))
 
-        # ==================== ЛАДЬЯ, СЛОН, КОРОЛЕВА ====================
+        # ==================== ROOK, BISHOP, QUEEN ====================
         elif piece.type in ["rook", "bishop", "queen"]:
             for dr, dc in directions[piece.type]:
-                # Идем в каждом направлении максимально далеко
+                # Walk as far as possible in the selected direction
                 for i in range(1, 8):
                     nr, nc = r + dr * i, c + dc * i
 
-                    # Проверяем границы доски
+                    # Stop once the path leaves the board
                     if 0 <= nr < 8 and 0 <= nc < 8:
                         target = board[nr][nc]
 
                         if target is None:
-                            # Пустая клетка - добавляем и продолжаем в этом направлении
+                            # Empty square: add it and keep moving
                             moves.append((nr, nc))
                         elif target.color != piece.color:
-                            # Враг - добавляем и СТОПИМ (не идем дальше)
+                            # Enemy piece: capture is allowed, but movement stops here
                             moves.append((nr, nc))
                             break
                         else:
-                            # Своя фигура - это преграда, СТОПИМ
+                            # Friendly piece blocks the path
                             break
                     else:
-                        # За границей доски - СТОПИМ
                         break
 
         return moves
 
     def is_check(self, color, board):
         """
-        Проверяет, находится ли король заданного цвета под шахом.
-        color: 'white' или 'black'
-        board: текущее состояние доски
+        Check whether the king of the given color is in check.
+
+        color: 'white' or 'black'
+        board: current board state
         """
-        # Находим короля нашего цвета
+        # Locate the king of the requested color
         king_pos = None
         for r in range(8):
             for c in range(8):
@@ -235,23 +236,23 @@ class ChessEngine:
                     break
 
         if not king_pos:
-            # Король не найден (теоретически невозможно в реальной игре)
+            # The king is missing, which should not happen in a real game
             return False
 
-        # Определяем цвет противника
+        # Determine the opponent color
         opponent = "black" if color == "white" else "white"
 
-        # Проверяем может ли противник атаковать нашего короля
+        # Check whether any opponent move attacks the king
         for r in range(8):
             for c in range(8):
                 p = board[r][c]
 
-                # Если это фигура противника
+                # Only consider opponent pieces
                 if p and p.color == opponent:
-                    # Получаем все ходы этой фигуры
+                    # Generate all moves for the piece
                     moves = self.get_valid_moves_for_piece(r, c, board)
 
-                    # Если король в списке ходов - это шах!
+                    # If the king square is attacked, the king is in check
                     if king_pos in moves:
                         return True
 
@@ -259,123 +260,119 @@ class ChessEngine:
 
     def get_legal_moves(self, r, c):
         """
-        Получает только ЛЕГАЛЬНЫЕ ходы для фигуры на позиции (r, c).
-        Легальный ход - это тот, после которого король не остается под шахом.
+        Return only legal moves for the piece on square (r, c).
+
+        A legal move is one that does not leave the king in check.
         """
         piece = self.board[r][c]
 
-        # Проверяем есть ли фигура и чей это ход
+        # Validate that a piece exists and that it belongs to the active player
         if not piece or piece.color != self.turn:
             return []
 
-        # Получаем все возможные ходы (без проверки на шах)
+        # Generate pseudo-legal moves
         pseudo_moves = self.get_valid_moves_for_piece(r, c, self.board)
         legal_moves = []
 
-        # Для каждого хода проверяем не оставляет ли он короля под шахом
+        # Validate each move by simulating it on a copied board
         for move in pseudo_moves:
-            # Симулируем ход на копии доски
-            temp_board = [row[:] for row in self.board]  # Копируем доску
-            temp_board[move[0]][move[1]] = temp_board[r][c]  # Переносим фигуру
-            temp_board[r][c] = None  # Очищаем старую позицию
+            temp_board = [row[:] for row in self.board]  # Shallow-copy each row
+            temp_board[move[0]][move[1]] = temp_board[r][c]  # Move the piece
+            temp_board[r][c] = None  # Clear the original square
 
-            # Проверяем остался ли наш король под шахом
+            # Keep only moves that leave the king safe
             if not self.is_check(self.turn, temp_board):
-                # Ход легален!
                 legal_moves.append(move)
 
         return legal_moves
 
     def make_move(self, start, end):
         """
-        Выполняет ход от позиции start к позиции end.
-        Возвращает True если ход успешен, False если ход недопустим.
+        Execute a move from start to end.
+
+        Returns True on success and False if the move is invalid.
         """
-        r1, c1 = start  # Откуда ходим
-        r2, c2 = end  # Куда ходим
+        r1, c1 = start  # Source square
+        r2, c2 = end  # Destination square
         piece = self.board[r1][c1]
 
-        # Проверяем есть ли фигура на начальной позиции
+        # Ensure there is a piece on the source square
         if not piece:
             return False
 
-        # Проверяем чей это ход (нельзя ходить фигурой другого цвета)
+        # Prevent moving the opponent's piece
         if piece.color != self.turn:
             return False
 
-        # Получаем легальные ходы для этой фигуры
+        # Generate legal moves for the selected piece
         legal_moves = self.get_legal_moves(r1, c1)
 
-        # Проверяем легален ли желаемый ход
+        # Reject the move if it is not legal
         if (r2, c2) not in legal_moves:
             return False
 
-        # Сохраняем текущее состояние для отката
+        # Save the current state for undo
         state_snapshot = {
-            "board": copy.deepcopy(self.board),  # Глубокая копия доски
+            "board": copy.deepcopy(self.board),  # Deep copy of the board
             "turn": self.turn,
             "move_count": self.move_count,
             "game_over": self.game_over,
         }
         self.move_log.append(state_snapshot)
 
-        # Выполняем ход
-        self.board[r2][c2] = self.board[r1][c1]  # Перемещаем фигуру
-        self.board[r1][c1] = None  # Очищаем старую позицию
+        # Execute the move
+        self.board[r2][c2] = self.board[r1][c1]  # Move the piece
+        self.board[r1][c1] = None  # Clear the original square
 
-        # Превращение пешки в королеву при достижении конца доски
+        # Promote a pawn to a queen when it reaches the last rank
         if piece.type == "pawn" and (r2 == 0 or r2 == 7):
             self.board[r2][c2].type = "queen"
 
-        # Переключаемся на следующего игрока
+        # Pass the turn to the other player
         self.switch_turn()
         self.move_count += 1
 
-        # Проверяем наступил ли мат
+        # Check for checkmate
         if self.is_checkmate():
             self.game_over = True
-            # Победил тот, кто только что ходил (противник текущего игрока)
+            # The winner is the player who just moved
             self.winner = "black" if self.turn == "white" else "white"
 
         return True
 
     def is_checkmate(self):
         """
-        Проверяет наступил ли мат.
-        Мат = король под шахом И нет ни одного легального хода
-        """
-        # Сначала проверяем есть ли шах вообще
-        if not self.is_check(self.turn, self.board):
-            return False  # Нет шаха = нет мата
+        Check whether the current player is in checkmate.
 
-        # Получаем все возможные ходы текущего игрока
+        Checkmate = king is in check and no legal move can resolve it.
+        """
+        # If there is no check, there is no checkmate
+        if not self.is_check(self.turn, self.board):
+            return False
+
+        # Generate all moves for the current player
         all_moves = self.get_all_possible_moves(self.turn, self.board)
 
-        # Проверяем есть ли хоть один ход, который спасает от шаха
+        # If any move removes the check, it is not checkmate
         for start, end in all_moves:
-            # Симулируем ход
             temp_board = [row[:] for row in self.board]
             temp_board[end[0]][end[1]] = temp_board[start[0]][start[1]]
             temp_board[start[0]][start[1]] = None
 
-            # Если после этого хода король не под шахом - это спасение!
             if not self.is_check(self.turn, temp_board):
-                return False  # Не мат, есть спасительный ход
+                return False
 
-        return True  # МАТ! Нет ни одного спасительного хода
+        return True
 
     def undo_move(self):
-        """
-        Отменяет последний ход и восстанавливает предыдущее состояние игры.
-        """
-        # Проверяем есть ли ходы в истории
+        """Undo the last move and restore the previous game state."""
+        # Ensure that move history is not empty
         if not self.move_log:
             return False
 
-        # Берем последнее сохраненное состояние и удаляем его из истории
+        # Restore the most recent saved state
         state = self.move_log.pop()
 
-        # Восстанавливаем все параметры из сохраненного состояния
         self.board = state["board"]
         self.turn = state["turn"]
         self.move_count = state["move_count"]
@@ -386,148 +383,147 @@ class ChessEngine:
 
 
 # ==========================
-# Консольный интерфейс
+# Console interface
 # ==========================
 
 
 def print_board(board):
-    """Красиво выводит доску в консоль с координатами и Unicode символами"""
-    # Выводим буквы столбцов сверху (a-h)
+    """Print the board with coordinates and Unicode piece symbols."""
+    # Print file labels across the top
     print("    a  b  c  d  e  f  g  h")
 
-    # Проходимся по каждой строке доски
+    # Print each rank
     for r in range(8):
-        # Номер ряда слева (8, 7, 6, ..., 1)
+        # Rank label on the left
         row_s = f"{8 - r} |"
 
-        # Проходимся по каждому столбцу (a-h)
+        # Print every square in the current rank
         for c in range(8):
             piece = board[r][c]
 
             if piece:
-                # Выводим символ фигуры
+                # Render the piece symbol
                 row_s += f" {piece.symbol()} "
             else:
-                # Выводим точку (пустая клетка)
+                # Render an empty square marker
                 row_s += " . "
 
-        # Номер ряда справа (дублируем для удобства)
+        # Duplicate the rank label on the right
         row_s += f"| {8 - r}"
         print(row_s)
 
-    # Выводим буквы столбцов снизу (a-h)
+    # Print file labels across the bottom
     print("    a  b  c  d  e  f  g  h\n")
 
 
 def parse_move(move_str):
     """
-    Парсит строку хода типа 'e2e4' в координаты доски.
-    Возвращает ((r1, c1), (r2, c2)) или None если формат неправильный.
+    Parse a move string such as 'e2e4' into board coordinates.
+
+    Returns ((r1, c1), (r2, c2)) or None if the format is invalid.
     """
     try:
-        # Проверяем длину строки (должна быть ровно 4 символа)
+        # The move string must be exactly 4 characters long
         if len(move_str) != 4:
             return None
 
-        # Парсим первую позицию (например, "e2")
-        # ord('a') = 97, ord('e') = 101, поэтому ord('e') - ord('a') = 4 (столбец e)
+        # Parse the first square (for example, "e2")
         c1 = ord(move_str[0].lower()) - ord("a")
-        # ord('2') = 50, int('2') = 2, поэтому 8 - 2 = 6 (строка 2 в индексе массива это 6)
         r1 = 8 - int(move_str[1])
 
-        # Парсим вторую позицию (например, "e4")
+        # Parse the second square (for example, "e4")
         c2 = ord(move_str[2].lower()) - ord("a")
         r2 = 8 - int(move_str[3])
 
-        # Проверяем все координаты в пределах доски (0-7)
+        # Reject coordinates outside the board range
         if any(x < 0 or x > 7 for x in [r1, r2, c1, c2]):
             return None
 
         return (r1, c1), (r2, c2)
 
     except Exception:
-        # Если произошла ошибка (например, не число вместо цифры)
+        # Invalid numeric or indexing input
         return None
 
 
 def main():
-    """Главная функция - основной игровой цикл"""
-    # Создаем новый движок (начальная расстановка)
+    """Run the main game loop."""
+    # Create a new game with the initial setup
     engine = ChessEngine()
 
     print("=" * 50)
-    print("Добро пожаловать в консольные шахматы!")
+    print("Welcome to console chess!")
     print("=" * 50)
-    print("Как ходить: введите ход в формате 'e2e4' (от куда, куда)")
-    print("Команды: 'undo' - отменить ход, 'q' - выход")
+    print("To move, enter a command like 'e2e4' (from square, to square).")
+    print("Commands: 'undo' to revert the last move, 'q' to quit.")
     print("=" * 50)
     print()
 
-    # Выводим начальную позицию
+    # Show the initial position
     print_board(engine.board)
 
-    # Основной игровой цикл
+    # Main game loop
     while True:
-        # Проверяем наступил ли мат
+        # Check whether the game has ended
         if engine.game_over:
             print("=" * 50)
-            print(f"МАТ! Победили {engine.winner.upper()}!")
+            print(f"CHECKMATE! {engine.winner.upper()} wins!")
             print("=" * 50)
 
-            # Спрашиваем хочет ли игрок новую партию
-            cmd = input("Хотите новую игру? (y/n): ").strip()
+            # Ask whether the user wants to start a new game
+            cmd = input("Start a new game? (y/n): ").strip()
 
             if cmd.lower().startswith("y"):
-                # Создаем новую игру
+                # Reset the game
                 engine = ChessEngine()
                 print_board(engine.board)
                 continue
             else:
-                # Выходим из программы
-                print("Спасибо за игру!")
+                # Exit the program
+                print("Thanks for playing!")
                 break
 
-        # Показываем чей ход
-        current_player = "БЕЛЫЕ" if engine.turn == "white" else "ЧЕРНЫЕ"
-        print(f"Ход: {current_player} | Всего ходов: {engine.move_count}")
+        # Show whose turn it is
+        current_player = "WHITE" if engine.turn == "white" else "BLACK"
+        print(f"Turn: {current_player} | Total moves: {engine.move_count}")
 
-        # Запрашиваем ход у игрока
-        move_str = input("Введите ход: ").strip()
+        # Ask the player for input
+        move_str = input("Enter move: ").strip()
 
-        # Проверяем специальные команды
+        # Handle special commands
         if move_str.lower() in ["q", "quit", "exit"]:
-            print("Выход из игры. До свидания!")
-            break  # Выходим из игры
+            print("Exiting the game. Goodbye!")
+            break
 
         if move_str.lower() == "undo":
-            # Отменяем последний ход
+            # Revert the last move
             if engine.undo_move():
-                print("\n✓ Ход отменен\n")
+                print("\n✓ Move undone\n")
                 print_board(engine.board)
             else:
-                print("\n✗ Нельзя отменить ход (история пуста)\n")
-            continue  # Переходим к следующей итерации
+                print("\n✗ Cannot undo the move (history is empty)\n")
+            continue
 
-        # Парсим ход
+        # Parse the move
         move = parse_move(move_str)
 
         if not move:
-            # Неправильный формат
-            print("\n✗ Неправильный формат! Пример: e2e4\n")
-            continue  # Просим ввести снова
+            # Invalid input format
+            print("\n✗ Invalid format. Example: e2e4\n")
+            continue
 
-        # Выполняем ход
+        # Execute the move
         start, end = move
         if not engine.make_move(start, end):
-            # Ход не сработал (недопустим)
-            print("\n✗ Неверный ход! (Король под шахом? Свой путь закрыт?)\n")
-            continue  # Ход не сработал, пробуем снова
+            # The move is illegal
+            print("\n✗ Illegal move. (King in check? Path blocked?)\n")
+            continue
 
-        # Ход выполнен успешно - показываем обновленную доску
+        # Show the updated board after a successful move
         print()
         print_board(engine.board)
 
 
 if __name__ == "__main__":
-    # Запускаем игру
+    # Start the game
     main()

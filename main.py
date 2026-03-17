@@ -1,9 +1,9 @@
 """
-Главный модуль шахматного эмулятора.
+Main module for the chess emulator.
 
-Реализованы дополнительные задания: 1, 5, 6, 7, 8 (Суммарная сложность: 5).
-Обеспечивает логику шахматной игры, включая стандартный режим и "сказочные"
-шахматы с новыми фигурами, а также пользовательский интерфейс в консоли.
+Implements additional tasks 1, 5, 6, 7, and 8 (total complexity: 5).
+Provides the chess game logic, including the standard mode and "fairy"
+chess with new piece types, along with a console user interface.
 """
 
 import copy
@@ -11,7 +11,7 @@ import os
 import sys
 from typing import List, Tuple, Optional, Dict, Any, Set
 
-# Цветовые константы для вывода текста
+# Color constants for text output
 GREEN_COLOR: str = "\033[92m"
 BLUE_COLOR: str = "\033[94m"
 YELLOW_COLOR: str = "\033[93m"
@@ -20,7 +20,7 @@ CYAN_COLOR: str = "\033[96m"
 MAGENTA_COLOR: str = "\033[95m"
 RESET_COLOR: str = "\033[0m"
 
-# Фоновые цвета для шахматной доски и подсветки
+# Background colors for the chessboard and move highlighting
 BG_LIGHT: str = "\033[47m"
 BG_DARK: str = "\033[100m"
 BG_GREEN: str = "\033[42m"
@@ -30,31 +30,31 @@ BG_MAGENTA: str = "\033[45m"
 
 class Piece:
     """
-    Класс, представляющий шахматную фигуру.
+    Represents a chess piece.
 
-    Поддерживает как классические фигуры, так и новые из Задания 1
-    (чемпион, колдун, прыгун).
+    Supports both classic pieces and the custom Task 1 pieces
+    (champion, wizard, jumper).
     """
 
     def __init__(self, color: str, type_: str) -> None:
         """
-        Инициализирует шахматную фигуру.
+        Initialize a chess piece.
 
-        :param color: Цвет фигуры ('white' или 'black').
-        :param type_: Тип фигуры (например, 'king', 'champion', 'pawn').
+        :param color: Piece color ('white' or 'black').
+        :param type_: Piece type (for example, 'king', 'champion', 'pawn').
         """
         self.color = color
         self.type = type_
 
     def __repr__(self) -> str:
-        """Возвращает техническое строковое представление фигуры."""
+        """Return the technical string representation of the piece."""
         return f"{self.color}_{self.type}"
 
     def symbol(self) -> str:
         """
-        Возвращает юникод-символ фигуры с соответствующим цветом.
+        Return the colored Unicode symbol for the piece.
 
-        :return: Строка с ANSI-кодом цвета и символом фигуры.
+        :return: A string with ANSI color codes and a Unicode symbol.
         """
         symbols: Dict[str, Dict[str, str]] = {
             "white": {
@@ -77,17 +77,17 @@ class Piece:
 
 class ChessEngine:
     """
-    Движок шахматной игры.
+    Chess game engine.
 
-    Обрабатывает логику перемещений, правила взятия на проходе,
-    превращения пешек, проверку шахов и матов, а также историю ходов.
+    Handles movement rules, en passant, pawn promotion,
+    check/checkmate validation, and move history.
     """
 
     def __init__(self, mode: str = "standard") -> None:
         """
-        Инициализирует состояние игры и шахматную доску.
+        Initialize the game state and chessboard.
 
-        :param mode: Режим игры ('standard' или 'fairy').
+        :param mode: Game mode ('standard' or 'fairy').
         """
         self.mode = mode
         self.board: List[List[Optional[Piece]]] = self.create_board(mode)
@@ -100,21 +100,21 @@ class ChessEngine:
 
     def create_board(self, mode: str) -> List[List[Optional[Piece]]]:
         """
-        Создает начальную расстановку фигур на доске.
+        Create the initial board setup.
 
-        :param mode: Режим игры (стандартный или с новыми фигурами).
-        :return: Двумерный список 8x8 с объектами Piece и пустыми клетками (None).
+        :param mode: Game mode (standard or fairy pieces).
+        :return: An 8x8 matrix containing Piece objects and empty squares (None).
         """
         board: List[List[Optional[Piece]]] = [
             [None for _ in range(8)] for _ in range(8)
         ]
 
-        # Расстановка пешек
+        # Place pawns
         for c in range(8):
             board[1][c] = Piece("black", "pawn")
             board[6][c] = Piece("white", "pawn")
 
-        # Определение расстановки первого ряда
+        # Define the back-rank setup
         if mode == "fairy":
             placement = [
                 "rook", "jumper", "wizard", "champion",
@@ -126,7 +126,7 @@ class ChessEngine:
                 "king", "bishop", "knight", "rook"
             ]
 
-        # Расстановка тяжелых фигур
+        # Place major pieces
         for c, type_ in enumerate(placement):
             board[0][c] = Piece("black", type_)
             board[7][c] = Piece("white", type_)
@@ -134,22 +134,22 @@ class ChessEngine:
         return board
 
     def switch_turn(self) -> None:
-        """Передает ход следующему игроку."""
+        """Pass the turn to the other player."""
         self.turn = "black" if self.turn == "white" else "white"
 
     def get_valid_moves_for_piece(
         self, r: int, c: int, board: List[List[Optional[Piece]]]
     ) -> List[Tuple[int, int]]:
         """
-        Генерирует все возможные (псевдолегальные) ходы для фигуры.
+        Generate all pseudo-legal moves for a piece.
 
-        Игнорирует проверку на шах собственному королю. Поддерживает
-        сложные правила пешек и кастомных фигур.
+        Ignores self-check validation. Supports advanced pawn rules
+        and custom fairy pieces.
 
-        :param r: Строка расположения фигуры.
-        :param c: Столбец расположения фигуры.
-        :param board: Текущее состояние доски для анализа.
-        :return: Список координат (строка, столбец) доступных ходов.
+        :param r: Piece row.
+        :param c: Piece column.
+        :param board: Current board state to analyze.
+        :return: A list of available destination coordinates.
         """
         piece = board[r][c]
         if not piece:
@@ -182,32 +182,32 @@ class ChessEngine:
         }
         directions["queen"] = directions["rook"] + directions["bishop"]
 
-        # Правила движения пешки
+        # Pawn movement rules
         if piece.type == "pawn":
             direction = -1 if piece.color == "white" else 1
             next_row = r + direction
 
-            # Ход вперед
+            # Single forward move
             if 0 <= next_row < 8 and board[next_row][c] is None:
                 moves.append((next_row, c))
                 start_row = 6 if piece.color == "white" else 1
 
-                # Двойной ход со стартовой позиции
+                # Double-step move from the starting rank
                 if r == start_row and board[next_row + direction][c] is None:
                     moves.append((next_row + direction, c))
 
-            # Диагональные взятия
+            # Diagonal captures
             for dc in [-1, 1]:
                 if 0 <= next_row < 8 and 0 <= c + dc < 8:
                     target = board[next_row][c + dc]
-                    # Обычное взятие
+                    # Standard capture
                     if target and target.color != piece.color:
                         moves.append((next_row, c + dc))
-                    # Взятие на проходе
+                    # En passant capture
                     elif self.en_passant_target == (next_row, c + dc):
                         moves.append((next_row, c + dc))
 
-        # Прыгающие фигуры (конь, король и новые сказочные фигуры)
+        # Jumping pieces (knight, king, and new fairy pieces)
         elif piece.type in ["knight", "king", "champion", "wizard", "jumper"]:
             for dr, dc in directions[piece.type]:
                 nr, nc = r + dr, c + dc
@@ -216,7 +216,7 @@ class ChessEngine:
                     if target is None or target.color != piece.color:
                         moves.append((nr, nc))
 
-        # Дальнобойные фигуры (ладья, слон, ферзь)
+        # Sliding pieces (rook, bishop, queen)
         elif piece.type in ["rook", "bishop", "queen"]:
             for dr, dc in directions[piece.type]:
                 for i in range(1, 8):
@@ -236,15 +236,15 @@ class ChessEngine:
 
     def is_check(self, color: str, board: List[List[Optional[Piece]]]) -> bool:
         """
-        Проверяет, находится ли король указанного цвета под шахом.
+        Check whether the specified king is in check.
 
-        :param color: Цвет короля для проверки ('white' или 'black').
-        :param board: Состояние доски.
-        :return: True, если королю объявлен шах, иначе False.
+        :param color: King color to validate ('white' or 'black').
+        :param board: Board state.
+        :return: True if the king is in check, otherwise False.
         """
         king_pos: Optional[Tuple[int, int]] = None
 
-        # Поиск короля
+        # Locate the king
         for r in range(8):
             for c in range(8):
                 p = board[r][c]
@@ -259,7 +259,7 @@ class ChessEngine:
 
         opponent = "black" if color == "white" else "white"
 
-        # Проверка всех ходов оппонента
+        # Check all opponent moves
         for r in range(8):
             for c in range(8):
                 p = board[r][c]
@@ -271,13 +271,13 @@ class ChessEngine:
 
     def get_legal_moves(self, r: int, c: int) -> List[Tuple[int, int]]:
         """
-        Возвращает список полностью легальных ходов для фигуры.
+        Return the list of fully legal moves for a piece.
 
-        Отфильтровывает ходы, которые приводят к шаху собственному королю.
+        Filters out moves that would leave the player's own king in check.
 
-        :param r: Строка расположения фигуры.
-        :param c: Столбец расположения фигуры.
-        :return: Список легальных конечных координат.
+        :param r: Piece row.
+        :param c: Piece column.
+        :return: A list of legal destination coordinates.
         """
         piece = self.board[r][c]
         if not piece or piece.color != self.turn:
@@ -287,16 +287,16 @@ class ChessEngine:
         legal_moves: List[Tuple[int, int]] = []
 
         for move in pseudo_moves:
-            # Создаем временную копию доски для симуляции хода
+            # Create a temporary board copy to simulate the move
             temp_board = [row[:] for row in self.board]
             temp_board[move[0]][move[1]] = temp_board[r][c]
             temp_board[r][c] = None
 
-            # Эмуляция взятия на проходе для корректной проверки шаха
+            # Simulate en passant capture for proper self-check validation
             if piece.type == "pawn" and move == self.en_passant_target:
                 temp_board[r][move[1]] = None
 
-            # Если после хода королю не шах, ход легален
+            # If the king is safe after the move, the move is legal
             if not self.is_check(self.turn, temp_board):
                 legal_moves.append(move)
 
@@ -306,11 +306,11 @@ class ChessEngine:
         self, color: str, board_state: Optional[List[List[Optional[Piece]]]] = None
     ) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
         """
-        Собирает абсолютно все легальные ходы для указанного цвета.
+        Collect all pseudo-legal moves for the specified color.
 
-        :param color: Цвет фигур ('white' или 'black').
-        :param board_state: Опциональное состояние доски (по умолчанию текущее).
-        :return: Список пар координат ((откуда), (куда)).
+        :param color: Piece color ('white' or 'black').
+        :param board_state: Optional board state override.
+        :return: A list of coordinate pairs ((from), (to)).
         """
         board = board_state if board_state else self.board
         moves: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
@@ -326,9 +326,9 @@ class ChessEngine:
 
     def is_checkmate(self) -> bool:
         """
-        Проверяет, поставлен ли мат текущему игроку.
+        Check whether the current player is in checkmate.
 
-        :return: True, если мат поставлен, иначе False.
+        :return: True if checkmate is present, otherwise False.
         """
         if not self.is_check(self.turn, self.board):
             return False
@@ -341,16 +341,21 @@ class ChessEngine:
                         return False
         return True
 
-    def make_move(self, start: Tuple[int, int], end: Tuple[int, int], promote_to: str = "queen") -> bool:
+    def make_move(
+        self,
+        start: Tuple[int, int],
+        end: Tuple[int, int],
+        promote_to: str = "queen",
+    ) -> bool:
         """
-        Осуществляет ход фигурой, обновляя состояние игры.
+        Execute a move and update the game state.
 
-        Сохраняет историю ходов, обрабатывает взятие на проходе и превращение пешки.
+        Saves move history and handles en passant and pawn promotion.
 
-        :param start: Координаты начала (строка, столбец).
-        :param end: Координаты конца (строка, столбец).
-        :param promote_to: Тип фигуры, в которую превращается пешка.
-        :return: True, если ход выполнен успешно, иначе False.
+        :param start: Starting coordinates (row, column).
+        :param end: Destination coordinates (row, column).
+        :param promote_to: Piece type used for pawn promotion.
+        :return: True if the move succeeds, otherwise False.
         """
         r1, c1 = start
         r2, c2 = end
@@ -363,7 +368,7 @@ class ChessEngine:
         if (r2, c2) not in legal_moves:
             return False
 
-        # Сохранение снимка текущего состояния для возможности отката (undo)
+        # Save the current state so undo remains available
         state_snapshot = {
             "board": copy.deepcopy(self.board),
             "turn": self.turn,
@@ -373,24 +378,24 @@ class ChessEngine:
         }
         self.move_log.append(state_snapshot)
 
-        # Выполняем взятие на проходе
+        # Execute en passant capture
         if piece.type == "pawn" and (r2, c2) == self.en_passant_target:
             self.board[r1][c2] = None
 
-        # Установка флага для возможного взятия на проходе на следующем ходу
+        # Set the target square for a possible en passant capture next turn
         if piece.type == "pawn" and abs(r1 - r2) == 2:
             self.en_passant_target = ((r1 + r2) // 2, c1)
         else:
             self.en_passant_target = None
 
-        # Перемещение фигуры
+        # Move the piece
         self.board[r2][c2] = self.board[r1][c1]
         self.board[r1][c1] = None
 
-        # Превращение пешки при достижении края доски
+        # Promote a pawn that reaches the last rank
         if piece.type == "pawn" and (r2 == 0 or r2 == 7):
             promoted_piece = self.board[r2][c2]
-            if promoted_piece:  # Защита типов
+            if promoted_piece:  # Type-safety guard
                 promoted_piece.type = promote_to
 
         self.switch_turn()
@@ -404,9 +409,9 @@ class ChessEngine:
 
     def undo_move(self) -> bool:
         """
-        Отменяет последний сделанный ход, возвращая игру к предыдущему состоянию.
+        Revert the last move and restore the previous game state.
 
-        :return: True, если отмена прошла успешно, иначе False.
+        :return: True if undo succeeds, otherwise False.
         """
         if not self.move_log:
             return False
@@ -424,10 +429,10 @@ class ChessEngine:
 
 def parse_square(sq_str: str) -> Optional[Tuple[int, int]]:
     """
-    Преобразует строковые координаты шахматной доски в индексы массива.
+    Convert chessboard coordinates to matrix indices.
 
-    :param sq_str: Строка с координатами (например, 'e2').
-    :return: Кортеж с индексами (строка, столбец) или None в случае неверного ввода.
+    :param sq_str: Coordinate string (for example, 'e2').
+    :return: A tuple (row, column) or None for invalid input.
     """
     try:
         c = ord(sq_str[0].lower()) - ord("a")
@@ -441,21 +446,21 @@ def parse_square(sq_str: str) -> Optional[Tuple[int, int]]:
 
 class AdvancedChessEmulator:
     """
-    Пользовательский интерфейс и машина состояний (State Machine) игры.
+    Console UI and game state machine.
 
-    Обеспечивает взаимодействие с пользователем через консоль,
-    подсветку ходов, угроз и навигацию по меню.
+    Handles user interaction, move highlighting,
+    threat highlighting, and menu navigation.
     """
 
     def __init__(self) -> None:
-        """Инициализирует эмулятор и начальное состояние UI."""
+        """Initialize the emulator and its initial UI state."""
         self.engine = ChessEngine()
         self.current_state: str = "main_menu"
         self.selected_square: Optional[Tuple[int, int]] = None
         self.show_threats: bool = False
 
     def run(self) -> None:
-        """Главный цикл приложения."""
+        """Run the main application loop."""
         self.print_header()
         while True:
             try:
@@ -466,33 +471,33 @@ class AdvancedChessEmulator:
                 else:
                     self.current_state = "main_menu"
             except KeyboardInterrupt:
-                print(f"\n\n{RED_COLOR}🔚 Выход из программы...{RESET_COLOR}")
+                print(f"\n\n{RED_COLOR}🔚 Exiting the program...{RESET_COLOR}")
                 break
             except Exception as e:
-                print(f"\n{RED_COLOR}❌ Ошибка: {e}{RESET_COLOR}")
+                print(f"\n{RED_COLOR}❌ Error: {e}{RESET_COLOR}")
                 self.current_state = "main_menu"
 
     def print_header(self) -> None:
-        """Выводит заголовок программы в консоль."""
+        """Print the program header to the console."""
         separator = f"{CYAN_COLOR}{'=' * 50}{RESET_COLOR}"
         print(separator)
-        print(f"{YELLOW_COLOR}♟️   ПРОДВИНУТЫЙ ЭМУЛЯТОР ШАХМАТ (MAX COMPLEXITY)  ♙{RESET_COLOR}")
+        print(f"{YELLOW_COLOR}♟️   ADVANCED CHESS EMULATOR (MAX COMPLEXITY)  ♙{RESET_COLOR}")
         print(separator)
 
     def show_main_menu(self) -> None:
-        """Отрисовывает главное меню и обрабатывает выбор пользователя."""
-        print(f"\n{CYAN_COLOR}=== ГЛАВНОЕ МЕНЮ ==={RESET_COLOR}")
+        """Render the main menu and process the user choice."""
+        print(f"\n{CYAN_COLOR}=== MAIN MENU ==={RESET_COLOR}")
         status = (
-            "Продолжить"
+            "Resume"
             if self.engine.move_count > 0 and not self.engine.game_over
-            else "Начать"
+            else "Start"
         )
 
-        print(f"1 - 🎮 {status} классическую партию")
-        print("2 - 🌟 Начать СКАЗОЧНЫЕ ШАХМАТЫ (3 новые фигуры)")
-        print("0 - 👋 Выход")
+        print(f"1 - 🎮 {status} a standard game")
+        print("2 - 🌟 Start FAIRY CHESS (3 new pieces)")
+        print("0 - 👋 Exit")
 
-        choice = input(f"\n{YELLOW_COLOR}Выберите опцию: {RESET_COLOR}").strip()
+        choice = input(f"\n{YELLOW_COLOR}Select an option: {RESET_COLOR}").strip()
 
         if choice == "1":
             if self.engine.game_over or self.engine.mode != "standard":
@@ -505,7 +510,7 @@ class AdvancedChessEmulator:
             sys.exit()
 
     def print_board_styled(self) -> None:
-        """Выводит шахматную доску с подсветкой доступных ходов и угроз."""
+        """Print the board with legal-move and threat highlights."""
         legal_destinations: Set[Tuple[int, int]] = set()
         if self.selected_square:
             moves = self.engine.get_legal_moves(*self.selected_square)
@@ -532,7 +537,7 @@ class AdvancedChessEmulator:
                     and piece.color == self.engine.turn
                 )
 
-                # Определение цвета фона клетки
+                # Determine the square background color
                 if is_selected:
                     bg = BG_MAGENTA
                 elif is_legal_dest:
@@ -551,90 +556,84 @@ class AdvancedChessEmulator:
         print(f"{CYAN_COLOR}    a  b  c  d  e  f  g  h{RESET_COLOR}\n")
 
     def play_match(self) -> None:
-        """Управляет циклом самой партии, обработкой ходов и команд."""
+        """Run the match loop and process moves and commands."""
         if self.engine.game_over:
             winner_str = str(self.engine.winner).upper()
-            print(f"\n{YELLOW_COLOR}🏆 МАТ! Победили {winner_str}!{RESET_COLOR}")
-            input(f"{CYAN_COLOR}Нажмите Enter для выхода в меню...{RESET_COLOR}")
+            print(f"\n{YELLOW_COLOR}🏆 CHECKMATE! {winner_str} wins!{RESET_COLOR}")
+            input(f"{CYAN_COLOR}Press Enter to return to the menu...{RESET_COLOR}")
             self.current_state = "main_menu"
             return
 
         self.print_board_styled()
 
         turn_str = (
-            f"{YELLOW_COLOR}БЕЛЫЕ{RESET_COLOR}"
+            f"{YELLOW_COLOR}WHITE{RESET_COLOR}"
             if self.engine.turn == "white"
-            else f"{BLUE_COLOR}ЧЕРНЫЕ{RESET_COLOR}"
+            else f"{BLUE_COLOR}BLACK{RESET_COLOR}"
         )
-        print(f"Ход: {turn_str} | Всего ходов: {self.engine.move_count}")
+        print(f"Turn: {turn_str} | Total moves: {self.engine.move_count}")
         print(
-            f"{CYAN_COLOR}Команды: {RESET_COLOR}'e2' (выбрать), "
-            f"'e2e4' (ход), 'undo', 'threats' (угрозы), '0' (в меню)"
+            f"{CYAN_COLOR}Commands: {RESET_COLOR}'e2' (select), "
+            f"'e2e4' (move), 'undo', 'threats', '0' (menu)"
         )
 
-        cmd = input(f"{YELLOW_COLOR}Ваш выбор: {RESET_COLOR}").strip().lower()
+        cmd = input(f"{YELLOW_COLOR}Your choice: {RESET_COLOR}").strip().lower()
 
         if cmd == "0":
             self.current_state = "main_menu"
+            self.selected_square = None
             return
 
         if cmd == "undo":
-            self.engine.undo_move()
-            self.selected_square = None
+            if self.engine.undo_move():
+                self.selected_square = None
             return
 
         if cmd == "threats":
             self.show_threats = not self.show_threats
             return
 
-        # Интерактивный выбор фигуры
+        # Interactive piece selection
         if len(cmd) == 2:
-            sq = parse_square(cmd)
-            if sq:
-                piece = self.engine.board[sq[0]][sq[1]]
+            square = parse_square(cmd)
+            if square:
+                piece = self.engine.board[square[0]][square[1]]
                 if piece and piece.color == self.engine.turn:
-                    self.selected_square = sq
+                    self.selected_square = square
                 else:
-                    self.selected_square = None
-                    print(f"{RED_COLOR}❌ Это не ваша фигура или клетка пуста!{RESET_COLOR}")
+                    print(f"{RED_COLOR}❌ That is not your piece, or the square is empty!{RESET_COLOR}")
             return
 
-        # Совершение хода
-        start: Optional[Tuple[int, int]] = None
-        end: Optional[Tuple[int, int]] = None
-
+        # Execute a move
         if len(cmd) == 4:
-            start, end = parse_square(cmd[:2]), parse_square(cmd[2:])
-        elif len(cmd) == 2 and self.selected_square:
-            start, end = self.selected_square, parse_square(cmd)
+            start = parse_square(cmd[:2])
+            end = parse_square(cmd[2:])
+            if start and end:
+                promote_to = "queen"
 
-        if start and end:
-            piece = self.engine.board[start[0]][start[1]]
-            promote_to = "queen"
-
-            # Проверка на превращение пешки
-            if piece and piece.type == "pawn" and (end[0] == 0 or end[0] == 7):
-                if end in self.engine.get_legal_moves(*start):
+                # Check for pawn promotion
+                piece = self.engine.board[start[0]][start[1]]
+                if piece and piece.type == "pawn" and end[0] in [0, 7]:
                     print(
-                        f"{MAGENTA_COLOR}🌟 Пешка достигла края! "
-                        f"В кого превратить? (queen, rook, bishop, knight){RESET_COLOR}"
+                        f"{MAGENTA_COLOR}🌟 Pawn reached the final rank! "
+                        f"Promote to? (queen, rook, bishop, knight){RESET_COLOR}"
                     )
-                    choice = input("Выбор: ").strip().lower()
+                    choice = input("Choice: ").strip().lower()
                     if choice in ["queen", "rook", "bishop", "knight"]:
                         promote_to = choice
 
-            if self.engine.make_move(start, end, promote_to):
-                self.selected_square = None
-            else:
-                print(f"\n{RED_COLOR}❌ Недопустимый ход!{RESET_COLOR}")
-        else:
-            print(
-                f"\n{RED_COLOR}❌ Неправильный формат! Введите откуда и куда "
-                f"(например: e2e4) или кликните e2{RESET_COLOR}"
-            )
+                if self.engine.make_move(start, end, promote_to):
+                    self.selected_square = None
+                    return
+                print(f"\n{RED_COLOR}❌ Illegal move!{RESET_COLOR}")
+                return
+
+        print(
+            f"\n{RED_COLOR}❌ Invalid format! Enter a source and destination "
+            f"(for example: e2e4) or select a square like e2.{RESET_COLOR}"
+        )
 
 
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
-    app = AdvancedChessEmulator()
-    app.run()
+    AdvancedChessEmulator().run()
