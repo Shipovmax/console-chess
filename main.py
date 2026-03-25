@@ -9,7 +9,7 @@ chess with new piece types, along with a console user interface.
 import copy
 import os
 import sys
-from typing import List, Tuple, Optional, Dict, Any, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Color constants for text output
 GREEN_COLOR: str = "\033[92m"
@@ -58,13 +58,25 @@ class Piece:
         """
         symbols: Dict[str, Dict[str, str]] = {
             "white": {
-                "king": "♔", "queen": "♕", "rook": "♖", "bishop": "♗",
-                "knight": "♘", "pawn": "♙", "champion": "★", "wizard": "✧",
+                "king": "♔",
+                "queen": "♕",
+                "rook": "♖",
+                "bishop": "♗",
+                "knight": "♘",
+                "pawn": "♙",
+                "champion": "★",
+                "wizard": "✧",
                 "jumper": "⚶",
             },
             "black": {
-                "king": "♚", "queen": "♛", "rook": "♜", "bishop": "♝",
-                "knight": "♞", "pawn": "♟", "champion": "★", "wizard": "✧",
+                "king": "♚",
+                "queen": "♛",
+                "rook": "♜",
+                "bishop": "♝",
+                "knight": "♞",
+                "pawn": "♟",
+                "champion": "★",
+                "wizard": "✧",
                 "jumper": "⚶",
             },
         }
@@ -117,13 +129,25 @@ class ChessEngine:
         # Define the back-rank setup
         if mode == "fairy":
             placement = [
-                "rook", "jumper", "wizard", "champion",
-                "king", "wizard", "jumper", "rook"
+                "rook",
+                "jumper",
+                "wizard",
+                "champion",
+                "king",
+                "wizard",
+                "jumper",
+                "rook",
             ]
         else:
             placement = [
-                "rook", "knight", "bishop", "queen",
-                "king", "bishop", "knight", "rook"
+                "rook",
+                "knight",
+                "bishop",
+                "queen",
+                "king",
+                "bishop",
+                "knight",
+                "rook",
             ]
 
         # Place major pieces
@@ -160,24 +184,54 @@ class ChessEngine:
             "rook": [(-1, 0), (1, 0), (0, -1), (0, 1)],
             "bishop": [(-1, -1), (-1, 1), (1, -1), (1, 1)],
             "knight": [
-                (-2, -1), (-2, 1), (-1, -2), (-1, 2),
-                (1, -2), (1, 2), (2, -1), (2, 1),
+                (-2, -1),
+                (-2, 1),
+                (-1, -2),
+                (-1, 2),
+                (1, -2),
+                (1, 2),
+                (2, -1),
+                (2, 1),
             ],
             "king": [
-                (-1, -1), (-1, 0), (-1, 1), (0, -1),
-                (0, 1), (1, -1), (1, 0), (1, 1),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+                (0, -1),
+                (0, 1),
+                (1, -1),
+                (1, 0),
+                (1, 1),
             ],
             "champion": [
-                (-2, 0), (2, 0), (0, -2), (0, 2),
-                (-1, 0), (1, 0), (0, -1), (0, 1),
+                (-2, 0),
+                (2, 0),
+                (0, -2),
+                (0, 2),
+                (-1, 0),
+                (1, 0),
+                (0, -1),
+                (0, 1),
             ],
             "wizard": [
-                (-3, -3), (-3, 3), (3, -3), (3, 3),
-                (-1, -1), (-1, 1), (1, -1), (1, 1),
+                (-3, -3),
+                (-3, 3),
+                (3, -3),
+                (3, 3),
+                (-1, -1),
+                (-1, 1),
+                (1, -1),
+                (1, 1),
             ],
             "jumper": [
-                (-2, -2), (-2, 2), (2, -2), (2, 2),
-                (-2, 0), (2, 0), (0, -2), (0, 2),
+                (-2, -2),
+                (-2, 2),
+                (2, -2),
+                (2, 2),
+                (-2, 0),
+                (2, 0),
+                (0, -2),
+                (0, 2),
             ],
         }
         directions["queen"] = directions["rook"] + directions["bishop"]
@@ -481,7 +535,9 @@ class AdvancedChessEmulator:
         """Print the program header to the console."""
         separator = f"{CYAN_COLOR}{'=' * 50}{RESET_COLOR}"
         print(separator)
-        print(f"{YELLOW_COLOR}♟️   ADVANCED CHESS EMULATOR (MAX COMPLEXITY)  ♙{RESET_COLOR}")
+        print(
+            f"{YELLOW_COLOR}♟️   ADVANCED CHESS EMULATOR (MAX COMPLEXITY)  ♙{RESET_COLOR}"
+        )
         print(separator)
 
     def show_main_menu(self) -> None:
@@ -601,7 +657,9 @@ class AdvancedChessEmulator:
                 if piece and piece.color == self.engine.turn:
                     self.selected_square = square
                 else:
-                    print(f"{RED_COLOR}❌ That is not your piece, or the square is empty!{RESET_COLOR}")
+                    print(
+                        f"{RED_COLOR}❌ That is not your piece, or the square is empty!{RESET_COLOR}"
+                    )
             return
 
         # Execute a move
@@ -637,5 +695,3 @@ class AdvancedChessEmulator:
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     AdvancedChessEmulator().run()
-
-print("hi")
