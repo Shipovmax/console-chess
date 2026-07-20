@@ -4,6 +4,7 @@ Complexity: 1
 """
 
 import pytest
+
 from main import ChessEngine, Piece
 
 

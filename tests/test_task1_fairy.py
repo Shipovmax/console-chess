@@ -4,6 +4,7 @@ Complexity: 1
 """
 
 import pytest
+
 from main import ChessEngine, Piece
 
 
@@ -32,8 +33,14 @@ def test_champion_moves(empty_engine):
 
     moves = engine.get_valid_moves_for_piece(4, 4, engine.board)
     expected_moves = [
-        (2, 4), (6, 4), (4, 2), (4, 6),  # 2-square moves
-        (3, 4), (5, 4), (4, 3), (4, 5)  # 1-square moves
+        (2, 4),
+        (6, 4),
+        (4, 2),
+        (4, 6),  # 2-square moves
+        (3, 4),
+        (5, 4),
+        (4, 3),
+        (4, 5),  # 1-square moves
     ]
 
     assert len(moves) == len(expected_moves)
@@ -48,8 +55,14 @@ def test_wizard_moves(empty_engine):
 
     moves = engine.get_valid_moves_for_piece(3, 3, engine.board)
     expected_moves = [
-        (0, 0), (0, 6), (6, 0), (6, 6),  # 3-square moves
-        (2, 2), (2, 4), (4, 2), (4, 4)  # 1-square moves
+        (0, 0),
+        (0, 6),
+        (6, 0),
+        (6, 6),  # 3-square moves
+        (2, 2),
+        (2, 4),
+        (4, 2),
+        (4, 4),  # 1-square moves
     ]
 
     assert len(moves) == len(expected_moves)
@@ -64,8 +77,14 @@ def test_jumper_moves(empty_engine):
 
     moves = engine.get_valid_moves_for_piece(4, 4, engine.board)
     expected_moves = [
-        (2, 2), (2, 6), (6, 2), (6, 6),  # diagonal 2-square moves
-        (2, 4), (6, 4), (4, 2), (4, 6)  # straight 2-square moves
+        (2, 2),
+        (2, 6),
+        (6, 2),
+        (6, 6),  # diagonal 2-square moves
+        (2, 4),
+        (6, 4),
+        (4, 2),
+        (4, 6),  # straight 2-square moves
     ]
 
     assert len(moves) == len(expected_moves)

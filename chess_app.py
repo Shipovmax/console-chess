@@ -15,20 +15,20 @@ class Piece:
         """Return the Unicode symbol used to render the piece in the console."""
         symbols = {
             "white": {
-                "king": "♔",   # White king
+                "king": "♔",  # White king
                 "queen": "♕",  # White queen
-                "rook": "♖",   # White rook
+                "rook": "♖",  # White rook
                 "bishop": "♗",  # White bishop
                 "knight": "♘",  # White knight
-                "pawn": "♙",   # White pawn
+                "pawn": "♙",  # White pawn
             },
             "black": {
-                "king": "♚",   # Black king
+                "king": "♚",  # Black king
                 "queen": "♛",  # Black queen
-                "rook": "♜",   # Black rook
+                "rook": "♜",  # Black rook
                 "bishop": "♝",  # Black bishop
                 "knight": "♞",  # Black knight
-                "pawn": "♟",   # Black pawn
+                "pawn": "♟",  # Black pawn
             },
         }
         return symbols[self.color][self.type]
@@ -127,12 +127,7 @@ class ChessEngine:
                 (0, -1),
                 (0, 1),
             ],  # Rook: up, down, left, right
-            "bishop": [
-                (-1, -1),
-                (-1, 1),
-                (1, -1),
-                (1, 1)
-            ],  # Bishop: four diagonals
+            "bishop": [(-1, -1), (-1, 1), (1, -1), (1, 1)],  # Bishop: four diagonals
             "knight": [
                 (-2, -1),
                 (-2, 1),
