@@ -6,15 +6,15 @@ A fully playable console chess implementation in Python — two versions in one 
 
 ## Two Versions
 
-### `main.py` — Baseline engine
+### `chess_app.py` — Baseline engine
 Standard chess with full legal move validation, checkmate detection, and undo. Plain console output with Unicode pieces.
 
-### `chess_app.py` — Advanced emulator
-Everything in `main.py` plus five extended features, ANSI colour output, and an interactive menu.
+### `main.py` — Advanced emulator
+Everything in `chess_app.py` plus five extended features, ANSI colour output, and an interactive menu.
 
 ---
 
-## Features (`chess_app.py`)
+## Features (`main.py`)
 
 **Standard gameplay**
 - Full move legality with check/checkmate validation
@@ -35,24 +35,26 @@ Everything in `main.py` plus five extended features, ANSI colour output, and an 
 
 ## Requirements
 
-Python 3.7+, no external dependencies.
+Python 3.7+, no external dependencies. `pytest` is only needed to run the test suite.
 
 ---
 
 ## Usage
 
 ```bash
-git clone https://github.com/Shipovmax/chess
-cd chess
+git clone https://github.com/Shipovmax/console-chess
+cd console-chess
 
-# Full-featured version
-python chess_app.py
+# Full-featured version (menu, fairy chess, highlighting, ANSI colours)
+python3 main.py
 
 # Minimal baseline version
-python main.py
+python3 chess_app.py
 ```
 
-### Controls (`chess_app.py`)
+### Controls (`main.py`)
+
+From the main menu, choose `1` for a standard game or `2` for Fairy Chess. During a match:
 
 | Input | Action |
 |-------|--------|
@@ -62,12 +64,21 @@ python main.py
 | `threats` | Toggle threat highlighting |
 | `0` | Return to main menu |
 
+### Controls (`chess_app.py`)
+
+| Input | Action |
+|-------|--------|
+| `e2e4` | Move piece from e2 to e4 |
+| `undo` | Revert the last move |
+| `q`, `quit`, `exit` | Quit the game |
+
 ---
 
 ## Tests
 
 ```bash
-python -m pytest tests/
+python3 -m pip install pytest
+python3 -m pytest tests/
 ```
 
 | Test file | Coverage |
